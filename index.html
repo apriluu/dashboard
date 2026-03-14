@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flood Monitoring Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Flood Monitoring Dashboard</h1>
+    <span id="timestamp">--:--:--</span>
+  </header>
+
+  <main>
+
+    <!-- METRIC CARDS -->
+    <section class="metrics">
+      <div class="card metric">
+        <p class="label">Water Level</p>
+        <p class="value"><span id="water-level">--</span> m</p>
+        <p class="status" id="water-status">--</p>
+      </div>
+      <div class="card metric">
+        <p class="label">Rain Rate</p>
+        <p class="value"><span id="rain-rate">--</span> mm/h</p>
+        <p class="status" id="rain-status">--</p>
+      </div>
+      <div class="card metric">
+        <p class="label">Bar Status</p>
+        <p class="value" id="bar-status">--</p>
+      </div>
+      <div class="card metric">
+        <p class="label">Temperature</p>
+        <p class="value"><span id="temperature">--</span> °C</p>
+      </div>
+    </section>
+
+    <!-- CHARTS ROW -->
+    <section class="charts">
+      <div class="card">
+        <h2>Water Level</h2>
+        <div id="water-gauge"><!-- gauge here --></div>
+      </div>
+      <div class="card">
+        <h2>Rainfall</h2>
+        <div id="rain-chart"><!-- chart here --></div>
+      </div>
+    </section>
+
+    <!-- METEO + MESSAGES -->
+    <section class="bottom">
+      <div class="card">
+        <h2>Meteorological Data</h2>
+        <div id="meteo-data"><!-- meteo here --></div>
+      </div>
+      <div class="card">
+        <h2>System Messages</h2>
+        <div id="messages"><!-- messages here --></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
