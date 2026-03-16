@@ -237,3 +237,16 @@ header h1 {
   color: #94a3b8;
   margin-top: 2px;
 }
+
+/* FLOOD STATUS BADGE */
+.status.alert {
+  font-size: 13px;
+  padding: 4px 12px;
+  letter-spacing: 0.02em;
+}
+
+.status.warn {
+  font-size: 13px;
+  padding: 4px 12px;
+  letter-spacing: 0.02em;
+}

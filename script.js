@@ -2,6 +2,13 @@
 let waterLevel = 1.24;
 let rainHistory = [0.20, 0.35, 0.55, 0.40, 0.60, 0.48, 0.38];
 
+// ── UNDERPASS PARAMETERS (placeholder — replace with real values from Alessio)
+const UNDERPASS = {
+  maxDepth: 2.0,        // total depth of the underpass in meters
+  floodingThreshold: 1.2, // water level where flooding starts (depends on slope)
+  floodedThreshold: 1.6,  // water level where it's fully flooded = access closed
+};
+
 // ── TIMESTAMP ──────────────────────────────────────────
 function updateTimestamp() {
   const now = new Date();
@@ -28,16 +35,16 @@ function updateWaterLevel() {
     <div class="water-level-label">${rounded} m</div>
   `;
 
-  // status badge
+  // flood status — 3 levels based on underpass parameters
   const statusEl = document.getElementById('water-status');
-  if (waterLevel > 1.7) {
-    statusEl.textContent = 'Alert';
+  if (waterLevel >= UNDERPASS.floodedThreshold) {
+    statusEl.textContent = 'FLOODED — access closed';
     statusEl.className = 'status alert';
-  } else if (waterLevel > 1.4) {
-    statusEl.textContent = 'Warning';
+  } else if (waterLevel >= UNDERPASS.floodingThreshold) {
+    statusEl.textContent = 'FLOODING — use with caution';
     statusEl.className = 'status warn';
   } else {
-    statusEl.textContent = 'Normal';
+    statusEl.textContent = 'No flood — access open';
     statusEl.className = 'status ok';
   }
 }
@@ -84,16 +91,45 @@ function updateBarStatus() {
   document.getElementById('bar-status').textContent = 'Closed';
 }
 
-// ── METEO (mock, later replaced by API) ───────────────
-function updateMeteo() {
-  document.getElementById('meteo-data').innerHTML = `
-    <div class="meteo-grid">
-      <div class="meteo-item"><div class="key">Temperature</div><div class="val">14 °C</div></div>
-      <div class="meteo-item"><div class="key">Humidity</div><div class="val">78 %</div></div>
-      <div class="meteo-item"><div class="key">Wind speed</div><div class="val">12 km/h</div></div>
-      <div class="meteo-item"><div class="key">Pressure</div><div class="val">1012 hPa</div></div>
-    </div>
-  `;
+// ── METEO — Open-Meteo API (Modena, Italy) ────────────
+async function updateMeteo() {
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=44.6458&longitude=10.9256&current=temperature_2m,relative_humidity_2m,wind_speed_10m,surface_pressure,precipitation&timezone=Europe/Rome';
+    const response = await fetch(url);
+    const data = await response.json();
+    const c = data.current;
+
+    document.getElementById('temperature').textContent = c.temperature_2m;
+
+    document.getElementById('meteo-data').innerHTML = `
+      <div class="meteo-grid">
+        <div class="meteo-item">
+          <div class="key">Temperature</div>
+          <div class="val">${c.temperature_2m} °C</div>
+        </div>
+        <div class="meteo-item">
+          <div class="key">Humidity</div>
+          <div class="val">${c.relative_humidity_2m} %</div>
+        </div>
+        <div class="meteo-item">
+          <div class="key">Wind speed</div>
+          <div class="val">${c.wind_speed_10m} km/h</div>
+        </div>
+        <div class="meteo-item">
+          <div class="key">Pressure</div>
+          <div class="val">${c.surface_pressure} hPa</div>
+        </div>
+        <div class="meteo-item">
+          <div class="key">Precipitation</div>
+          <div class="val">${c.precipitation} mm</div>
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    document.getElementById('meteo-data').innerHTML = `
+      <p style="color:#ef4444;font-size:13px;">Could not load meteorological data</p>
+    `;
+  }
 }
 
 // ── MESSAGES ───────────────────────────────────────────
