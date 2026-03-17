@@ -71,18 +71,41 @@ function updateRain() {
     statusEl.className = 'status ok';
   }
 
-  // bars
-  const barsHTML = rainHistory.map((v, i) => {
-    const isActive = i === rainHistory.length - 1;
-    return `<div class="rain-bar ${isActive ? 'active' : ''}" style="height: ${v * 90 + 5}%"></div>`;
-  }).join('');
+// line chart using SVG
+  const w = 400, h = 80, pad = 10;
+  const max = 1.0, min = 0.0;
+  const stepX = (w - pad * 2) / (rainHistory.length - 1);
+
+  const points = rainHistory.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / (max - min)) * (h - pad * 2);
+    return `${x},${y}`;
+  }).join(' ');
+
+  const lastX = pad + (rainHistory.length - 1) * stepX;
+  const lastY = h - pad - ((rainHistory[rainHistory.length - 1] - min) / (max - min)) * (h - pad * 2);
 
   document.getElementById('rain-chart').innerHTML = `
-    <div class="rain-bars-container">${barsHTML}</div>
-    <div class="rain-time-labels">
-      <span>-6s</span><span>-5s</span><span>-4s</span>
-      <span>-3s</span><span>-2s</span><span>-1s</span><span>now</span>
-    </div>
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:90px;">
+      <!-- grid lines -->
+      <line x1="${pad}" y1="${pad}" x2="${w - pad}" y2="${pad}" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="${pad}" y1="${h / 2}" x2="${w - pad}" y2="${h / 2}" stroke="#e2e8f0" stroke-width="1"/>
+      <line x1="${pad}" y1="${h - pad}" x2="${w - pad}" y2="${h - pad}" stroke="#e2e8f0" stroke-width="1"/>
+      <!-- area fill -->
+      <polygon
+        points="${pad},${h - pad} ${points} ${lastX},${h - pad}"
+        fill="#93c5fd" opacity="0.3"/>
+      <!-- line -->
+      <polyline
+        points="${points}"
+        fill="none" stroke="#2563eb" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <!-- current point dot -->
+      <circle cx="${lastX}" cy="${lastY}" r="4" fill="#2563eb"/>
+      <!-- labels -->
+      <text x="${pad}" y="${h + 2}" font-size="9" fill="#94a3b8">-6s</text>
+      <text x="${w / 2}" y="${h + 2}" font-size="9" fill="#94a3b8" text-anchor="middle">-3s</text>
+      <text x="${w - pad}" y="${h + 2}" font-size="9" fill="#94a3b8" text-anchor="end">now</text>
+    </svg>
   `;
 }
 
