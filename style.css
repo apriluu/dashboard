@@ -250,3 +250,66 @@ header h1 {
   padding: 4px 12px;
   letter-spacing: 0.02em;
 }
+
+/* OVERVIEW PAGE */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.underpass-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  display: block;
+  color: inherit;
+}
+
+.underpass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.underpass-card h2 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a2e;
+  margin-bottom: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.underpass-card .flood-status {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.underpass-card .meta {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* BACK BUTTON */
+.back-btn {
+  font-size: 13px;
+  color: white;
+  opacity: 0.7;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.back-btn:hover {
+  opacity: 1;
+}
