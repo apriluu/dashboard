@@ -86,90 +86,107 @@ function updateRain() {
   renderRainChart();
 }
 
+// ── RAIN CHART — with zoom control ────────────────────
+let zoomMinutes = 30; // default 30 min, max 60
+
 function renderRainChart() {
-  const w = 500, h = 100, padL = 30, padR = 10, padT = 10, padB = 20;
+  const now = Date.now();
+  const windowMs = zoomMinutes * 60 * 1000;
+  const visibleData = rainHistory.filter(d => d.time.getTime() >= now - windowMs);
+  if (visibleData.length < 2) return;
+
+  const w = 500, h = 120, padL = 36, padR = 10, padT = 10, padB = 22;
   const chartW = w - padL - padR;
   const chartH = h - padT - padB;
 
-  const data = rainHistory;
-  const minTime = data[0].time.getTime();
-  const maxTime = data[data.length - 1].time.getTime();
+  const minTime = visibleData[0].time.getTime();
+  const maxTime = visibleData[visibleData.length - 1].time.getTime();
   const timeRange = maxTime - minTime || 1;
 
-  // build polyline points
-  const points = data.map(d => {
-    const x = padL + ((d.time.getTime() - minTime) / timeRange) * chartW;
-    const y = padT + chartH - (d.value * chartH);
-    return `${x},${y}`;
-  }).join(' ');
+  const toX = t => padL + ((t - minTime) / timeRange) * chartW;
+  const toY = v => padT + chartH - (v * chartH);
 
-  const firstX = padL;
-  const lastX = padL + chartW;
+  const points = visibleData.map(d => `${toX(d.time.getTime())},${toY(d.value)}`).join(' ');
+  const lastX = toX(maxTime);
+  const lastY = toY(visibleData[visibleData.length - 1].value);
   const baseY = padT + chartH;
 
-  // build timestamp labels (every 15 minutes)
-  const labels = [];
-  data.forEach(d => {
-    if (d.time.getSeconds() === 0 && d.time.getMinutes() % 15 === 0) {
-      const x = padL + ((d.time.getTime() - minTime) / timeRange) * chartW;
+  // y axis lines: 0, 4, 8, 12, 16, 20 mm/h
+  const yLevels = [0, 4, 8, 12, 16, 20];
+  const yLines = yLevels.map(mmh => {
+    const v = mmh / 20;
+    const y = toY(v);
+    return `
+      <line x1="${padL}" y1="${y}" x2="${padL + chartW}" y2="${y}"
+        stroke="#e2e8f0" stroke-width="1"/>
+      <text x="${padL - 4}" y="${y + 3}" font-size="8" fill="#94a3b8" text-anchor="end">${mmh}</text>
+    `;
+  }).join('');
+
+  // x axis labels every 10 minutes
+  const labelSet = new Set();
+  const xLabels = visibleData.map(d => {
+    const mins = d.time.getMinutes();
+    const key = `${d.time.getHours()}:${mins}`;
+    if (mins % 10 === 0 && !labelSet.has(key)) {
+      labelSet.add(key);
+      const x = toX(d.time.getTime());
       const hh = String(d.time.getHours()).padStart(2, '0');
       const mm = String(d.time.getMinutes()).padStart(2, '0');
-      labels.push({ x, label: `${hh}:${mm}` });
+      return `
+        <line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + chartH}"
+          stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="${x}" y="${h - 4}" font-size="8" fill="#94a3b8" text-anchor="middle">${hh}:${mm}</text>
+      `;
     }
-  });
+    return '';
+  }).join('');
 
-  // always show first and last timestamp
   const fmt = d => {
     const hh = String(d.time.getHours()).padStart(2, '0');
     const mm = String(d.time.getMinutes()).padStart(2, '0');
     return `${hh}:${mm}`;
   };
 
+  const currentMmh = (visibleData[visibleData.length - 1].value * 20).toFixed(1);
+
   document.getElementById('rain-chart').innerHTML = `
-    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:110px;">
 
-      <!-- grid lines -->
-      <line x1="${padL}" y1="${padT}" x2="${padL + chartW}" y2="${padT}"
-        stroke="#e2e8f0" stroke-width="1"/>
-      <line x1="${padL}" y1="${padT + chartH / 2}" x2="${padL + chartW}" y2="${padT + chartH / 2}"
-        stroke="#e2e8f0" stroke-width="1"/>
-      <line x1="${padL}" y1="${padT + chartH}" x2="${padL + chartW}" y2="${padT + chartH}"
-        stroke="#e2e8f0" stroke-width="1"/>
+    <!-- live value -->
+    <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+      <span style="font-size:28px;font-weight:500;color:#1a1a2e;">${currentMmh}</span>
+      <span style="font-size:13px;color:#64748b;">mm/h now</span>
+    </div>
 
-      <!-- y axis labels -->
-      <text x="${padL - 4}" y="${padT + 3}" font-size="8" fill="#94a3b8" text-anchor="end">20</text>
-      <text x="${padL - 4}" y="${padT + chartH / 2 + 3}" font-size="8" fill="#94a3b8" text-anchor="end">10</text>
-      <text x="${padL - 4}" y="${padT + chartH + 3}" font-size="8" fill="#94a3b8" text-anchor="end">0</text>
+    <!-- zoom controls -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-size:11px;color:#64748b;">Zoom:</span>
+      <button onclick="setZoom(10)" class="zoom-btn ${zoomMinutes===10?'zoom-active':''}">10m</button>
+      <button onclick="setZoom(30)" class="zoom-btn ${zoomMinutes===30?'zoom-active':''}">30m</button>
+      <button onclick="setZoom(60)" class="zoom-btn ${zoomMinutes===60?'zoom-active':''}">1h</button>
+    </div>
 
-      <!-- area fill -->
+    <!-- chart -->
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:130px;">
+      ${yLines}
+      ${xLabels}
       <polygon
         points="${padL},${baseY} ${points} ${lastX},${baseY}"
-        fill="#93c5fd" opacity="0.3"/>
-
-      <!-- line -->
+        fill="#93c5fd" opacity="0.25"/>
       <polyline
         points="${points}"
         fill="none" stroke="#2563eb" stroke-width="1.5"
         stroke-linejoin="round" stroke-linecap="round"/>
-
-      <!-- current dot -->
-      <circle cx="${lastX}" cy="${padT + chartH - (data[data.length-1].value * chartH)}"
-        r="3" fill="#2563eb"/>
-
-      <!-- x axis timestamp labels -->
-      ${labels.map(l => `
-        <line x1="${l.x}" y1="${padT}" x2="${l.x}" y2="${padT + chartH}"
-          stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,3"/>
-        <text x="${l.x}" y="${h - 2}" font-size="8" fill="#94a3b8" text-anchor="middle">${l.label}</text>
-      `).join('')}
-
-      <!-- first and last time -->
-      <text x="${padL}" y="${h - 2}" font-size="8" fill="#64748b">${fmt(data[0])}</text>
-      <text x="${lastX}" y="${h - 2}" font-size="8" fill="#64748b" text-anchor="end">${fmt(data[data.length-1])}</text>
-
+      <circle cx="${lastX}" cy="${lastY}" r="3" fill="#2563eb"/>
+      <text x="${padL}" y="${h - 4}" font-size="8" fill="#64748b">${fmt(visibleData[0])}</text>
+      <text x="${padL + chartW}" y="${h - 4}" font-size="8" fill="#64748b" text-anchor="end">${fmt(visibleData[visibleData.length-1])}</text>
     </svg>
-    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">mm/h — past 60 minutes</div>
   `;
+}
+
+function setZoom(minutes) {
+  zoomMinutes = minutes;
+  renderRainChart();
 }
 
 // ── BAR STATUS ─────────────────────────────────────────
